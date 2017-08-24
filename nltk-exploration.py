@@ -444,3 +444,150 @@ a=testing_set[0][0]
 a.keys()[a.values()]
 [name for name, boole in a.items() if boole == True]
 print(testing_set[0][0](testing_set[0][0].values()==True)
+      
+      
+ ################# pickel: save python objects ##########################
+"""
+As you will likely find with any form of data analysis, there 
+is going to be some sort of processing bottleneck, that you
+ repeat over and over, often yielding the same object in 
+ Python memory. 
+"""
+
+import pickle
+import os
+
+os.chdir("C:/work")
+save_classifier=open("naivebayes.pickle","wb")
+pickle.dump(classifier,save_classifier)
+save_classifier.close()
+
+
+classifier_f=open("naivebayes.pickle","rb")
+classifier=pickle.load(classifier_f)
+classifier_f.close()
+
+print("Original Naive Bayes Algo Accuracy:", nltk.classify.accuracy(classifier,testing_set))
+
+classifier.show_most_informative_features(20)
+
+
+############## import scikit-learn incorporation #####################
+
+from nltk.classify.scikitlearn import SklearnClassifier
+
+from sklearn.naive_bayes import MultinomialNB, GaussianNB, BernoulliNB
+
+#Multinomial NB: many categories
+MNB_classifier=SklearnClassifier(MultinomialNB())
+MNBclassifier=MNB_classifier.train(training_set)
+print("Multinomial Naive Bayes Algo Accuracy:", nltk.classify.accuracy(MNBclassifier,testing_set))
+
+
+#Bernoulli NB:
+BN_classifier=SklearnClassifier(BernoulliNB())
+BNclassifier=BN_classifier.train(training_set)
+print("Bernoulli Naive Bayes Algo Accuracy:", nltk.classify.accuracy(BNclassifier,testing_set))
+
+##Gaussian NB: 
+#GS_classifier=SklearnClassifier(GaussianNB())
+#GSclassifier=GS_classifier.train(training_set)
+#print("Gaussian Naive Bayes Algo Accuracy:", nltk.classify.accuracy(GSclassifier,testing_set))
+#
+#
+
+from sklearn.linear_model import LogisticRegression, SGDClassifier
+from sklearn.svm import SVC,LinearSVC,NuSVC
+
+#all using defaults: no parameters choosen
+
+#logistic regression
+LR_classifier=SklearnClassifier(LogisticRegression())
+LRclassifier=LR_classifier.train(training_set)
+print("logistic regression Algo Accuracy:", nltk.classify.accuracy(LRclassifier,testing_set))
+
+#SVM
+SVC_classifier=SklearnClassifier(SVC())
+SVCclassifier=SVC_classifier.train(training_set)
+print("SVM Algo Accuracy:", nltk.classify.accuracy(SVCclassifier,testing_set))
+
+#SGD classifier
+SGD_classifier=SklearnClassifier(SGDClassifier())
+SGDclassifier=SGD_classifier.train(training_set)
+print("SGD classifier Algo Accuracy:", nltk.classify.accuracy(SGDclassifier,testing_set))
+
+#LinearSVC
+LinearSVC_classifier=SklearnClassifier(LinearSVC())
+LinearSVCclassifier=LinearSVC_classifier.train(training_set)
+print("LinearSVC Algo Accuracy:", nltk.classify.accuracy(LinearSVCclassifier,testing_set))
+
+#NuSVC
+NuSVC_classifier=SklearnClassifier(NuSVC())
+NuSVCclassifier=NuSVC_classifier.train(training_set)
+print("NuSVC Algo Accuracy:", nltk.classify.accuracy(NuSVCclassifier,testing_set))
+
+
+
+
+###################### Combining algos with a vote #######################################
+
+from nltk.classify import ClassifierI
+from statistics import mode  #mode of the list 众数
+"""
+ClassifierI is a standard interface for “single-category classification”, in which the set of
+ categories is known, the number of categories is finite, and each text belongs to exactly 
+ one category.
+"""
+
+
+class VoteClassifier(ClassifierI):
+    #pass a list of classifiers through our voteclassifier class
+    def __init__(self,*classifiers):
+        self._classifiers=classifiers
+        
+    def classify(self, features):
+        votes=[]
+        for c in self._classifiers:
+            v=c.classify(features)
+            votes.append(v)
+        return mode(votes)   #votes： ['pos', 'pos', 'pos', 'pos', 'pos', 'pos', 'pos']找出众数
+
+    def confidence(self,features):
+        votes=[]
+        for c in self._classifiers:
+            v=c.classify(features)
+            votes.append(v)
+        #how many possible votes in that vote lists
+        choice_votes=votes.count(mode(votes))  #有多少人投了 pos
+        return choice_votes/len(votes)
+        
+        
+voted_classifier=VoteClassifier(classifier,MNBclassifier,BNclassifier,LRclassifier
+                               ,SVCclassifier,LinearSVCclassifier,NuSVCclassifier )
+        
+#voted_classifier: a list of classifiers
+print ("voted classifier accuracy:", (nltk.classify.accuracy(voted_classifier,testing_set)))
+
+print("Classification:", voted_classifier.classify(testing_set[0][0]),
+" Confidence %:",voted_classifier.confidence(testing_set[0][0]))
+
+
+print("Classification:", voted_classifier.classify(testing_set[1][0]),
+" Confidence %:",voted_classifier.confidence(testing_set[1][0]))
+
+
+print("Classification:", voted_classifier.classify(testing_set[2][0]),
+" Confidence %:",voted_classifier.confidence(testing_set[2][0]))
+
+
+print("Classification:", voted_classifier.classify(testing_set[6][0]),
+" Confidence %:",voted_classifier.confidence(testing_set[6][0]))
+
+
+
+
+
+     
+      
+      
+ 
